@@ -1,0 +1,20 @@
+- name: Configure webserver with nginx
+  hosts: webservers
+  become: true
+
+  tasks:
+    - name: Ensure nginx is installed
+      package:
+        name: nginx
+        update_cache: true
+    
+    - name: Get services facts
+      service_facts:
+
+    - debug: msg="nginx state is {{ ansible_facts.services.nginx.state }}"
+
+    - name: Stop nginx
+      when: ansible_facts.services.nginx.state == "running"
+      service:
+        name: nginx
+        state: stopped
