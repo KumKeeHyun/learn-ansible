@@ -1,0 +1,19 @@
+[{
+  "name": "vm1",
+  "box": "spox/ubuntu-arm",
+  "cpus": 1,
+  "memory": "1024",
+  "private_network": "192.168.56.2"
+},{
+  "name": "vm2",
+  "box": "spox/ubuntu-arm",
+  "cpus": 1,
+  "memory": "1024",
+  "private_network": "192.168.56.3"
+},{
+  "name": "vm3",
+  "box": "spox/ubuntu-arm",
+  "cpus": 1,
+  "memory": "1024",
+  "private_network": "192.168.56.4"
+}]
