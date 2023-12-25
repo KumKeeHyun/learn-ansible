@@ -1,0 +1,7 @@
+- name: kafka borker
+  hosts: brokers
+  gather_facts: false
+  serial: 1
+
+  roles:
+    - role: broker

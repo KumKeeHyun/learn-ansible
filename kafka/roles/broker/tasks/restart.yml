@@ -1,0 +1,17 @@
+---
+- name: Update systemd service
+  become: true
+  template:
+    src: kafka.service.j2
+    dest: /etc/systemd/system/kafka.service
+    mode: 0640
+    owner: root
+    group: root
+
+- name: Restart kafka
+  become: true
+  systemd:
+    daemon_reload: true
+    name: kafka
+    state: restarted
+...

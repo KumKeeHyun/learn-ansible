@@ -1,0 +1,55 @@
+---
+- name: Set kafka config variables
+  set_fact:
+    kafka_bin: "{{ kafka_home }}/bin"
+    kafka_storage_meta: "{{ kafka_log_dir }}/meta.properties"
+    voters: "{{ groups['brokers'] | map('extract', hostvars) | map(attribute='id') | zip(groups['brokers'] | map('extract', hostvars) | map(attribute='ansible_host')) | map('join', '@') | map('regex_replace', '$', ':9093') | join(',') }}"
+
+- name: Debug config variables
+  debug:
+    msg: >
+      id: {{ hostvars[inventory_hostname].id }},
+      addr: {{ hostvars[inventory_hostname].ansible_host }},
+      voters: {{ voters }}
+
+- name: Set kafka config file
+  become: true
+  template:
+    src: server.properties.j2
+    dest: "{{ kafka_config_file }}"
+    mode: 0644
+  vars:
+    broker_id: "{{ hostvars[inventory_hostname].id }}"
+    broker_addr: "{{ hostvars[inventory_hostname].ansible_host }}"
+  notify: restart kafka
+
+- name: Check already format storage
+  stat:
+    path: "{{ kafka_storage_meta }}"
+  delegate_to: "{{ groups.brokers[0] }}"
+  register: meta_file_stat
+
+- name: Generate uuid
+  when: not meta_file_stat.stat.exists
+  shell: "{{ kafka_bin }}/kafka-storage.sh random-uuid"
+  delegate_to: "{{ groups.brokers[0] }}"
+  register: new_uuid
+
+- name: Extract uuid
+  when: meta_file_stat.stat.exists
+  slurp:
+    src: "{{ kafka_storage_meta }}"
+  delegate_to: "{{ groups.brokers[0] }}"
+  register: uuid
+
+- name: Debug uuid
+  debug: "msg={{ clusterid }}"
+  vars: 
+    clusterid: "{% if new_uuid.stdout is defined %}{{ new_uuid.stdout }}{% else %}{{ (uuid['content'] | b64decode).partition('cluster.id=')[2].partition('\n')[0] }}{% endif %}"
+
+- name: Format storage
+  shell: "{{ kafka_bin }}/kafka-storage.sh format -t {{ clusterid }} -c {{ kafka_config_file }} --ignore-formatted"
+  notify: restart kafka
+  vars: 
+    clusterid: "{% if new_uuid.stdout is defined %}{{ new_uuid.stdout }}{% else %}{{ (uuid['content'] | b64decode).partition('cluster.id=')[2].partition('\n')[0] }}{% endif %}"
+...

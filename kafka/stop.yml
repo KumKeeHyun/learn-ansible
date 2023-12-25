@@ -1,0 +1,11 @@
+- name: stop kafka borker
+  hosts: brokers
+  gather_facts: false
+  serial: 1
+
+  tasks:
+    - name: Stop kafka broker
+      become: true
+      systemd:
+        name: kafka
+        state: stopped
